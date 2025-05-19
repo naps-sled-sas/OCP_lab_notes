@@ -173,3 +173,155 @@ spec:
 ## Delete PVCs and PVs
 - `for pvc in $(oc get pvc -o jsonpath='{.items[*].metadata.name}'); do oc delete persistentvolumeclaims/${pvc}; done`
 - `for pv in $(oc get pv -o jsonpath='{.items[*].metadata.name}'); do oc delete persistentvolume/${pv}; done`
+
+# ROSA setup example
+> - [Get started with ROSA](https://docs.aws.amazon.com/rosa/latest/userguide/getting-started.html)
+You need the AWS CLI AND the ROSA CLI
+- [AWS CLI](]https://aws.amazon.com/cli/)
+- [ROSA CLI Linux](https://mirror.openshift.com/pub/cgw/rosa/latest/rosa-linux.tar.gz)
+- [ROSA CLI Mac](https://mirror.openshift.com/pub/cgw/rosa/latest/rosa-macosx.tar.gz)
+- [ROSA CLI Windows](https://mirror.openshift.com/pub/cgw/rosa/latest/rosa-windows.zip)
+
+> Make sure awscli can see your environment variables: 
+> - [Configuring environment variables for the AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-envvars.html)
+>   - `export AWS_ACCESS_KEY_ID=AKIAIOSFODNN7EXAMPLE`
+>   - `export AWS_SECRET_ACCESS_KEY=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY`
+>   - `export AWS_DEFAULT_REGION=us-west-2`
+
+## Complete AWS prerequisites
+> Make sure your AWS account is set up for ROSA deployment. If you've already set it up, you can continue to the ROSA prerequisites.
+
+- Enable AWS
+- Configure Elastic Load Balancer (ELB)
+- Set up a VPC for ROSA HCP clusters (optional for ROSA classic clusters)
+- Verify your quotas on AWS console
+
+> **cluster-admin password is going to be passed back to you in plain text fyi**
+## Example setup
+
+```
+[cmcaskil@corvidae ~]$ export AWS_DEFAULT_REGION=us-east-2
+[cmcaskil@corvidae ~]$ export AWS_ACCESS_KEY_ID=AKIAIOSFODNN7EXAMPLE
+[cmcaskil@corvidae ~]$ export AWS_SECRET_ACCESS_KEY=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
+[cmcaskil@corvidae ~]$ rosa create account-roles --mode auto
+I: Logged in as 'cmcaskill' on 'https://api.openshift.com'
+I: Validating AWS credentials...
+I: AWS credentials are valid!
+I: Validating AWS quota...
+I: AWS quota ok. If cluster installation fails, validate actual AWS resource usage against https://docs.openshift.com/rosa/rosa_getting_started/rosa-required-aws-service-quotas.html
+I: Verifying whether OpenShift command-line tool is available...
+I: Current OpenShift Client Version: 4.16.0-202504101004.p0.gee354f6.assembly.stream-ee354f6
+I: Creating account roles
+I: By default, the create account-roles command creates two sets of account roles, one for classic ROSA clusters, and one for Hosted Control Plane clusters.
+In order to create a single set, please set one of the following flags: --classic or --hosted-cp
+<TRUNCATED>
+```
+```
+[cmcaskil@corvidae ~]$ rosa create cluster
+I: Enabling interactive mode
+? Cluster name: rosa-test
+? Domain prefix (optional):
+? Deploy cluster with Hosted Control Plane: No
+? Create cluster admin user: Yes
+? Create custom password for cluster admin: Yes
+? Password: [? for help] ****************
+I: cluster admin user is cluster-admin
+I: cluster admin password is <password>
+? Deploy cluster using AWS STS: Yes
+W: In a future release STS will be the default mode.
+W: --sts flag won't be necessary if you wish to use STS.
+W: --non-sts/--mint-mode flag will be necessary if you do not wish to use STS.
+? OpenShift version (default = '4.17.27'): 4.18.11
+? Configure the use of IMDSv2 for ec2 instances (default = 'optional'): optional
+W: Account roles not created by ROSA CLI cannot be listed, updated, or upgraded.
+I: Using arn:aws:iam::649594858475:role/ManagedOpenShift-Installer-Role for the Installer role
+I: Using arn:aws:iam::649594858475:role/ManagedOpenShift-Support-Role for the Support role
+I: Using arn:aws:iam::649594858475:role/ManagedOpenShift-ControlPlane-Role for the ControlPlane role
+I: Using arn:aws:iam::649594858475:role/ManagedOpenShift-Worker-Role for the Worker role
+? External ID (optional):
+? Operator roles prefix: rosa-test-p9k5
+? Deploy cluster using pre registered OIDC Configuration ID: Yes
+W: No OIDC Configuration found; will continue with the classic flow.
+? Tags (optional):
+? Multiple availability zones: No
+? AWS region (default = 'us-east-2'): us-east-2
+? PrivateLink cluster: No
+? Machine CIDR: 10.0.0.0/16
+? Service CIDR: 172.30.0.0/16
+? Pod CIDR: 10.128.0.0/14
+? Install into an existing VPC: Yes
+W: No subnets found in current region that are valid for the chosen CIDR ranges
+? Continue with default? A new RH Managed VPC will be created for your cluster Yes
+? Select availability zones: No
+? Enable Customer Managed key: No
+? Compute nodes instance type (optional, choose 'Skip' to skip selection. The default value will be provided; default = 'm5.xlarge'): m5.xlarge
+? Enable autoscaling: Yes
+? Min replicas: 2
+? Max replicas: 2
+? Configure cluster-autoscaler: Yes
+? Balance similar node groups: Yes
+? Skip nodes with local storage: Yes
+? Log verbosity: 1
+? Labels that cluster autoscaler should ignore when considering node group similarity (optional):
+? Ignore daemonsets utilization: Yes
+? Maximum node provision time: 15m
+? Maximum pod grace period: 600
+? Pod priority threshold: -10
+? Maximum amount of nodes in the cluster: 254
+? Minimum number of cores to deploy in cluster: 0
+? Maximum number of cores to deploy in cluster: 11520
+? Minimum amount of memory, in GiB, in the cluster: 4
+? Maximum amount of memory, in GiB, in the cluster: 230400
+? Enter the number of GPU limitations you wish to set: 0
+? Should scale-down be enabled: No
+? How long a node should be unneeded before it is eligible for scale down (optional):
+? Node utilization threshold: 0.500000
+? How long after scale up should scale down evaluation resume (optional):
+? How long after node deletion should scale down evaluation resume (optional):
+? How long after node deletion failure should scale down evaluation resume. (optional):
+? Worker machine pool labels (optional):
+? Host prefix: 23
+? Machine pool root disk size (GiB or TiB): 300 GiB
+? Enable FIPS support: No
+? Encrypt etcd data: No
+? Disable Workload monitoring: No
+? Customize the default Ingress Controller? No
+I: Creating cluster 'rosa-test'
+I: To create this cluster again in the future, you can run:
+   rosa create cluster --cluster-name rosa-test --sts --cluster-admin-password <password> --role-arn arn:aws:iam::649594858475:role/ManagedOpenShift-Installer-Role --support-role-arn arn:aws:iam::649594858475:role/ManagedOpenShift-Support-Role --controlplane-iam-role arn:aws:iam::649594858475:role/ManagedOpenShift-ControlPlane-Role --worker-iam-role arn:aws:iam::649594858475:role/ManagedOpenShift-Worker-Role --operator-roles-prefix rosa-test-p9k5 --region us-east-2 --version 4.18.11 --ec2-metadata-http-tokens optional --enable-autoscaling --min-replicas 2 --max-replicas 2 --compute-machine-type m5.xlarge --machine-cidr 10.0.0.0/16 --service-cidr 172.30.0.0/16 --pod-cidr 10.128.0.0/14 --host-prefix 23 --autoscaler-balance-similar-node-groups --autoscaler-skip-nodes-with-local-storage --autoscaler-log-verbosity 1 --autoscaler-max-pod-grace-period 600 --autoscaler-pod-priority-threshold -10 --autoscaler-ignore-daemonsets-utilization --autoscaler-max-node-provision-time 15m --autoscaler-max-nodes-total 254 --autoscaler-min-cores 0 --autoscaler-max-cores 11520 --autoscaler-min-memory 4 --autoscaler-max-memory 230400 --autoscaler-scale-down-utilization-threshold 0.500000
+I: To view a list of clusters and their status, run 'rosa list clusters'
+I: Cluster 'rosa-test' has been created.
+I: Once the cluster is installed you will need to add an Identity Provider before you can login into the cluster. See 'rosa create idp --help' for more information.
+<TRUNCATED>
+I: Run the following commands to continue the cluster creation:
+
+        rosa create operator-roles --cluster rosa-test
+        rosa create oidc-provider --cluster rosa-test
+
+I: To determine when your cluster is Ready, run 'rosa describe cluster -c rosa-test'.
+I: To watch your cluster installation logs, run 'rosa logs install -c rosa-test --watch'.
+[cmcaskil@corvidae ~]$ rosa list ocm-role
+I: Fetching ocm roles
+I: No ocm roles available
+[cmcaskil@corvidae ~]$ rosa create ocm-role --admin
+I: Creating ocm role
+? Role prefix: ManagedOpenShift
+? Permissions boundary ARN (optional):
+? Role Path (optional):
+? Role creation mode: auto
+I: Creating role using 'arn:aws:iam::649594858475:user/open-environment-crwhh-admin'
+? Create the 'ManagedOpenShift-OCM-Role-16317861' role? Yes
+<TRUNCATED>
+I: Linking OCM role
+[cmcaskil@corvidae ~]$ rosa create user-role
+I: Creating User role
+? Role prefix: ManagedOpenShift
+? Permissions boundary ARN (optional):
+? Role Path (optional):
+? Role creation mode: auto
+I: Created role 'ManagedOpenShift-User-cmcaskill-Role' with ARN 'arn:aws:iam::649594858475:role/ManagedOpenShift-User-cmcaskill-Role'
+I: Linking User role
+[cmcaskil@corvidae ~]$
+```
+
+## Add identity provider so you can log in
